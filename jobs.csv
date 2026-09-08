@@ -1,0 +1,11 @@
+job_id,job_title,skills,description
+1,Machine Learning Engineer,"Python,Machine Learning,Scikit-learn,TensorFlow","Develop machine learning models, train predictive systems and deploy AI applications."
+2,Data Scientist,"Python,SQL,Pandas,Machine Learning,Statistics","Analyze large datasets, build predictive models and generate business insights."
+3,Data Analyst,"Python,SQL,Excel,Pandas,Power BI","Analyze data, create reports and dashboards and generate useful business insights."
+4,Backend Developer,"Python,Flask,Django,SQL,REST API","Develop backend applications, APIs and database-driven web systems."
+5,Frontend Developer,"HTML,CSS,JavaScript,React","Develop responsive and interactive web applications using modern frontend technologies."
+6,AI Engineer,"Python,Machine Learning,Deep Learning,TensorFlow,PyTorch","Build artificial intelligence applications and deep learning models."
+7,Cyber Security Analyst,"Linux,Networking,Python,Cyber Security,SIEM","Monitor networks, detect security threats and protect computer systems."
+8,Cloud Engineer,"AWS,Docker,Linux,Python,Kubernetes","Deploy and maintain scalable cloud infrastructure and containerized applications."
+9,Software Developer,"Python,Java,SQL,Git,Data Structures","Design, develop, test and maintain software applications."
+10,NLP Engineer,"Python,NLP,Machine Learning,Transformers,PyTorch","Develop natural language processing systems using machine learning and transformer models."
