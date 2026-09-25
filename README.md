@@ -83,6 +83,3 @@ streamlit run app.py
 **Developed for educational and academic purposes.**
 
 ```
-
-This is the version I'd use for your project: **short, technical, and recruiter-friendly without unnecessary explanation.**
-```
