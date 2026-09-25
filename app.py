@@ -265,25 +265,48 @@ if uploaded_file:
         )
 
     # --------------------------------------------------
-    # Named Entity Recognition
+    # Named Entities - Grouped by Classification
     # --------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Named Entity Classification</div>',
+        unsafe_allow_html=True
+    )
 
     entities = extract_entities(resume_text)
 
-    st.subheader(" Named Entities")
-
     if entities:
 
-        for entity in entities:
+        from collections import defaultdict
+        import pandas as pd
 
-            st.write(
-                f"**{entity['text']}** → {entity['label']}"
+        grouped_entities = defaultdict(list)
+
+        for ent in entities:
+            grouped_entities[ent["label"]].append(ent["text"])
+
+        # Remove duplicate entities while preserving order
+        for label in grouped_entities:
+            grouped_entities[label] = list(
+                dict.fromkeys(grouped_entities[label])
             )
 
+        # Create one column for each classification
+        entity_table = pd.DataFrame(
+            dict(
+                (label, pd.Series(values))
+                for label, values in grouped_entities.items()
+            )
+        )
+
+        st.dataframe(
+            entity_table,
+            use_container_width=True,
+            hide_index=True
+        )
+
     else:
-
-        st.write("No named entities detected.")
-
+        st.info("No named entities detected.")
 
     # --------------------------------------------------
     # Find Best Jobs Button
@@ -469,55 +492,56 @@ if uploaded_file:
         # Best Matching Job
         # --------------------------------------------------
 
-        st.markdown(
-            '<div class="section-title">Best Matching Job</div>',
-            unsafe_allow_html=True
-        )
-
-        best_job = max(
-            recommendations,
-            key=lambda job: job["final_score"]
-        )
-
-        st.markdown(
-            f"""
-            <div class="job-card">
-                <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
-                    {best_job["job_title"]}
-                </div>
-                <div style="font-size: 16px; margin-bottom: 15px;">
-                    Personalized recommendation based on your resume and skills
-                </div>
-                <div style="font-size: 30px; font-weight: 700;">
-                    {best_job["final_score"]:.2f}%
-                </div>
-                <div style="font-size: 14px;">
-                    Overall Match
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric(
-                "Match Score",
-                f"{best_job['final_score']:.2f}%"
+        if recommendations:
+            st.markdown(
+                '<div class="section-title">Best Matching Job</div>',
+                unsafe_allow_html=True
             )
 
-        with col2:
-            st.metric(
-                "Skills Matched",
-                len(best_job["matched_skills"])
+            best_job = max(
+                recommendations,
+                key=lambda job: job["final_score"]
             )
 
-        with col3:
-            st.metric(
-                "Skills Missing",
-                len(best_job["missing_skills"])
+            st.markdown(
+                f"""
+                <div class="job-card">
+                    <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+                        {best_job["job_title"]}
+                    </div>
+                    <div style="font-size: 16px; margin-bottom: 15px;">
+                        Personalized recommendation based on your resume and skills
+                    </div>
+                    <div style="font-size: 30px; font-weight: 700;">
+                        {best_job["final_score"]:.2f}%
+                    </div>
+                    <div style="font-size: 14px;">
+                        Overall Match
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "Match Score",
+                    f"{best_job['final_score']:.2f}%"
+                )
+
+            with col2:
+                st.metric(
+                    "Skills Matched",
+                    len(best_job["matched_skills"])
+                )
+
+            with col3:
+                st.metric(
+                    "Skills Missing",
+                    len(best_job["missing_skills"])
+                )
 
         # --------------------------------------------------
         # Skill Distribution
@@ -738,9 +762,7 @@ if uploaded_file:
                 # Matching Skills
                 # --------------------------------------------------
 
-                st.write(
-                    "** Matching Skills**"
-                )
+                st.markdown("**Matching Skills:**")
 
 
                 if job["matched_skills"]:
@@ -760,9 +782,7 @@ if uploaded_file:
                 # Missing Skills
                 # --------------------------------------------------
 
-                st.write(
-                    "** Missing Skills**"
-                )
+                st.markdown("**Missing Skills:**")
 
 
                 if job["missing_skills"]:
