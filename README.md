@@ -1,6 +1,3 @@
-Absolutely. For your GitHub repo, I'd make it **very compact** while still showing the project's technical depth.
-
-````markdown
 # AI-Based Job Recommendation System
 
 An AI-powered system that analyzes resumes and recommends relevant jobs using **NLP, NER, semantic similarity, and skill matching**.
@@ -19,12 +16,8 @@ An AI-powered system that analyzes resumes and recommends relevant jobs using **
 - Recommendation dashboard
 - CSV and PDF report generation
 
-## Recommendation Score
 
-```text
-Final Score =
-60% Semantic Similarity + 40% Skill Match
-````
+```
 
 ## Tech Stack
 
@@ -81,5 +74,3 @@ streamlit run app.py
 [GitHub](https://github.com/siddhiuk/Job-Recommendation)
 
 **Developed for educational and academic purposes.**
-
-
