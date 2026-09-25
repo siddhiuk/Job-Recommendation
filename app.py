@@ -1,42 +1,181 @@
 import streamlit as st
 import pandas as pd
 
+st.set_page_config(
+    page_title="AI Job Recommendation",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+
+
 from modules.resume_parser import extract_text
 from modules.ner import extract_skills, extract_entities
 from modules.recommender import recommend_jobs
+from modules.ats_score import calculate_ats_score
+from modules.resume_improvement import generate_resume_suggestions
+from modules.report_generator import generate_pdf_report
 
+# --------------------------------------------------
+# Page Configuration
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="AI Job Recommendation System",
-    page_icon="💼",
+    page_icon=" ",
     layout="wide"
 )
 
+# --------------------------------------------------
+# Custom UI Styling
+# --------------------------------------------------
+st.markdown("""
+<style>
 
-st.title("💼 AI-Based Job Recommendation System")
+.main-title {
+    font-size: 42px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 5px;
+}
 
-st.write(
-    "Upload your resume and get personalized job recommendations "
-    "using NER, resume matching and semantic similarity."
+.subtitle {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 25px;
+    font-weight: 650;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+div[data-testid="stMetric"] {
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.job-card {
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    margin-bottom: 20px;
+}
+
+.stTextInput > div > div > input {
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.stSlider {
+    padding-top: 5px;
+}
+
+
+
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# Title
+# --------------------------------------------------
+
+st.markdown(
+    '<div class="main-title">AI-Based Job Recommendation System</div>',
+    unsafe_allow_html=True
 )
 
+st.markdown(
+    '<div class="subtitle">'
+    'Upload your resume and get personalized job recommendations '
+    'using NER, resume matching and semantic similarity.'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+# --------------------------------------------------
+# Load Jobs Dataset
+# --------------------------------------------------
 
 jobs = pd.read_csv("jobs.csv")
 
 
-uploaded_file = st.file_uploader(
-    "Upload your Resume",
-    type=["pdf"]
+# --------------------------------------------------
+# Resume Upload
+# --------------------------------------------------
+
+st.markdown(
+    '<div class="section-title"> Upload Your Resume</div>',
+    unsafe_allow_html=True
 )
 
+st.markdown(
+    "Upload your PDF resume to analyze your skills, calculate your ATS score, "
+    "and find suitable job opportunities."
+)
+
+uploaded_file = st.file_uploader(
+    "Choose your resume (PDF)",
+    type=["pdf"],
+    help="Upload a PDF resume for analysis."
+)
+
+# --------------------------------------------------
+# Job Search & Filters
+# --------------------------------------------------
+
+st.markdown(
+    '<div class="section-title">Job Search & Filters</div>',
+    unsafe_allow_html=True
+)
+
+filter_col1, filter_col2, filter_col3 = st.columns([2, 2, 1])
+
+with filter_col1:
+    job_title_filter = st.text_input(
+        "Job Title",
+        placeholder="Search by job title"
+    )
+
+with filter_col2:
+    skill_filter = st.text_input(
+        "Required Skill",
+        placeholder="Search by skill"
+    )
+
+with filter_col3:
+    min_match_score = st.slider(
+        "Minimum Match",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=5
+    )
+
+
+# --------------------------------------------------
+# Resume Processing
+# --------------------------------------------------
 
 if uploaded_file:
 
     st.success("Resume uploaded successfully!")
 
+
+    # Extract Resume Text
+
     resume_text = extract_text(uploaded_file)
 
-    st.subheader("📄 Resume Preview")
+
+    # --------------------------------------------------
+    # Resume Preview
+    # --------------------------------------------------
+
+    st.subheader(" Resume Preview")
 
     st.text_area(
         "Extracted Resume Text",
@@ -45,11 +184,15 @@ if uploaded_file:
     )
 
 
-    # NER / Skills
+
+
+    # --------------------------------------------------
+    # Skill Extraction
+    # --------------------------------------------------
 
     skills = extract_skills(resume_text)
 
-    st.subheader("🧠 Skills Detected")
+    st.subheader(" Skills Detected")
 
     if skills:
 
@@ -61,12 +204,73 @@ if uploaded_file:
             "No predefined technical skills detected."
         )
 
+    # --------------------------------------------------
+    # ATS Resume Score
+    # --------------------------------------------------
 
-    # General NER
+    ats_score = calculate_ats_score(
+        resume_text,
+        skills
+    )
+
+    st.subheader(" Resume ATS Score")
+
+    st.metric(
+        "ATS Score",
+        f"{ats_score}/100"
+    )
+
+    st.progress(
+        min(ats_score / 100, 1.0)
+    )
+
+    if ats_score >= 80:
+
+        st.success(
+            " Strong ATS Score"
+        )
+
+    elif ats_score >= 60:
+
+        st.info(
+            " Good ATS Score"
+        )
+
+    elif ats_score >= 40:
+
+        st.warning(
+            "Your resume can be improved"
+        )
+
+    else:
+
+        st.error(
+            "Your resume needs significant improvement"
+        )
+
+    # --------------------------------------------------
+    # Resume Improvement Suggestions
+    # --------------------------------------------------
+
+    suggestions = generate_resume_suggestions(
+        resume_text,
+        skills
+    )
+
+    st.subheader("Resume Improvement Suggestions")
+
+    for suggestion in suggestions:
+        st.write(
+            suggestion
+        )
+
+    # --------------------------------------------------
+    # Named Entity Recognition
+    # --------------------------------------------------
 
     entities = extract_entities(resume_text)
 
-    st.subheader("🔍 Named Entities")
+    st.subheader(" Named Entities")
 
     if entities:
 
@@ -76,10 +280,16 @@ if uploaded_file:
                 f"**{entity['text']}** → {entity['label']}"
             )
 
+    else:
 
-    # Recommendation
+        st.write("No named entities detected.")
 
-    if st.button("🚀 Find Best Jobs"):
+
+    # --------------------------------------------------
+    # Find Best Jobs Button
+    # --------------------------------------------------
+
+    if st.button(" Find Best Jobs"):
 
         with st.spinner(
             "Analyzing resume and matching jobs..."
@@ -88,47 +298,450 @@ if uploaded_file:
             recommendations = recommend_jobs(
                 resume_text,
                 skills,
-                jobs
+                jobs,
+                top_n=len(jobs)
             )
 
+            # --------------------------------------------------
+            # Apply Job Filters
+            # --------------------------------------------------
 
-        st.subheader(
-            "🏆 Top Job Recommendations"
+        filtered_recommendations = []
+
+        for job in recommendations:
+
+            # ----------------------------------------------
+            # Job Title Filter
+            # ----------------------------------------------
+
+            if job_title_filter:
+
+                if job_title_filter.lower() not in job["job_title"].lower():
+                    continue
+
+            # ----------------------------------------------
+            # Skill Filter
+            # ----------------------------------------------
+
+            if skill_filter:
+
+                skill_found = False
+
+                for skill in (
+                        job["matched_skills"]
+                        + job["missing_skills"]
+                ):
+
+                    if skill_filter.lower() in skill.lower():
+                        skill_found = True
+                        break
+
+                if not skill_found:
+                    continue
+
+            # ----------------------------------------------
+            # Minimum Match Score
+            # ----------------------------------------------
+
+            if job["final_score"] < min_match_score:
+                continue
+
+            filtered_recommendations.append(job)
+
+        recommendations = filtered_recommendations
+
+
+        # --------------------------------------------------
+        # Job Recommendations
+        # --------------------------------------------------
+        # --------------------------------------------------
+        # Job Recommendation Dashboard
+        # --------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">Recommendation Dashboard</div>',
+            unsafe_allow_html=True
         )
 
+        if recommendations:
+            total_jobs = len(recommendations)
 
-        for i, job in enumerate(
-            recommendations,
-            start=1
-        ):
-
-            st.markdown(
-                f"### {i}. {job['job_title']}"
+            best_match = max(
+                job["final_score"]
+                for job in recommendations
             )
 
-            st.metric(
-                "Overall Match",
-                f"{job['final_score']}%"
+            average_match = sum(
+                job["final_score"]
+                for job in recommendations
+            ) / total_jobs
+
+            total_missing_skills = len(
+                set(
+                    skill
+                    for job in recommendations
+                    for skill in job["missing_skills"]
+                )
             )
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3, col4 = st.columns(4)
 
             with col1:
-
-                st.write(
-                    f"**Semantic Similarity:** "
-                    f"{job['semantic_score']}%"
+                st.metric(
+                    " Jobs Found",
+                    total_jobs
                 )
-
-                st.write(
-                    f"**Skill Match:** "
-                    f"{job['skill_score']}%"
-                )
-
 
             with col2:
+                st.metric(
+                    " Best Match",
+                    f"{best_match:.2f}%"
+                )
 
-                st.write("**✅ Matching Skills**")
+            with col3:
+                st.metric(
+                    " Average Match",
+                    f"{average_match:.2f}%"
+                )
+
+            with col4:
+                st.metric(
+                    " Missing Skills",
+                    total_missing_skills
+                )
+        # Job Match Comparison Chart
+        st.markdown(
+            '<div class="section-title">Job Match Comparison</div>',
+            unsafe_allow_html=True
+        )
+
+        chart_data = pd.DataFrame({
+            "Job": [
+                job["job_title"]
+                for job in recommendations
+            ],
+            "Match Score": [
+                job["final_score"]
+                for job in recommendations
+            ]
+        })
+
+        st.bar_chart(
+            chart_data.set_index("Job")
+        )
+        # --------------------------------------------------
+        # Skill Overview
+        # --------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">Skill Overview</div>',
+            unsafe_allow_html=True
+        )
+
+        all_matched_skills = set(
+            skill
+            for job in recommendations
+            for skill in job["matched_skills"]
+        )
+
+        all_missing_skills = set(
+            skill
+            for job in recommendations
+            for skill in job["missing_skills"]
+        )
+
+        skill_overview = pd.DataFrame({
+            "Category": [
+                "Skills You Have",
+                "Skills To Learn"
+            ],
+            "Count": [
+                len(all_matched_skills),
+                len(all_missing_skills)
+            ]
+        })
+
+        st.bar_chart(
+            skill_overview.set_index("Category")
+        )
+
+        # --------------------------------------------------
+        # Best Matching Job
+        # --------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">Best Matching Job</div>',
+            unsafe_allow_html=True
+        )
+
+        best_job = max(
+            recommendations,
+            key=lambda job: job["final_score"]
+        )
+
+        st.markdown(
+            f"""
+            <div class="job-card">
+                <div style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">
+                    {best_job["job_title"]}
+                </div>
+                <div style="font-size: 16px; margin-bottom: 15px;">
+                    Personalized recommendation based on your resume and skills
+                </div>
+                <div style="font-size: 30px; font-weight: 700;">
+                    {best_job["final_score"]:.2f}%
+                </div>
+                <div style="font-size: 14px;">
+                    Overall Match
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Match Score",
+                f"{best_job['final_score']:.2f}%"
+            )
+
+        with col2:
+            st.metric(
+                "Skills Matched",
+                len(best_job["matched_skills"])
+            )
+
+        with col3:
+            st.metric(
+                "Skills Missing",
+                len(best_job["missing_skills"])
+            )
+
+        # --------------------------------------------------
+        # Skill Distribution
+        # --------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">Skill Distribution</div>',
+            unsafe_allow_html=True
+        )
+
+        skill_rows = []
+
+        for job in recommendations:
+
+            for skill in job["matched_skills"]:
+                skill_rows.append({
+                    "Skill": skill,
+                    "Status": "Have"
+                })
+
+            for skill in job["missing_skills"]:
+                skill_rows.append({
+                    "Skill": skill,
+                    "Status": "To Learn"
+                })
+
+        if skill_rows:
+
+            skill_df = pd.DataFrame(skill_rows)
+
+            skill_summary = (
+                skill_df
+                .groupby(["Skill", "Status"])
+                .size()
+                .reset_index(name="Job Count")
+                .sort_values(
+                    "Job Count",
+                    ascending=False
+                )
+            )
+
+            st.dataframe(
+                skill_summary,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        else:
+            st.info("No skill distribution data available.")
+
+        # --------------------------------------------------
+        # Download Recommendation Report
+        # --------------------------------------------------
+
+        st.markdown(
+            '<div class="section-title">Download Recommendation Report</div>',
+            unsafe_allow_html=True
+        )
+
+        report_data = []
+
+        for job in recommendations:
+            report_data.append({
+                "Job Title": job["job_title"],
+                "Overall Match (%)": job["final_score"],
+                "Semantic Similarity (%)": job["semantic_score"],
+                "Skill Match (%)": job["skill_score"],
+                "Matched Skills": ", ".join(job["matched_skills"]),
+                "Missing Skills": ", ".join(job["missing_skills"])
+            })
+
+        report_df = pd.DataFrame(report_data)
+
+        csv_data = report_df.to_csv(index=False)
+
+        st.download_button(
+            label=" Download Job Recommendation Report",
+            data=csv_data,
+            file_name="job_recommendation_report.csv",
+            mime="text/csv"
+        )
+        # --------------------------------------------------
+        # PDF Recommendation Report
+        # --------------------------------------------------
+
+        st.write("###  Download PDF Report")
+
+        pdf_file = "job_recommendation_report.pdf"
+
+        generate_pdf_report(
+            pdf_file,
+            ats_score,
+            skills,
+            recommendations,
+            suggestions
+        )
+
+        with open(pdf_file, "rb") as pdf:
+            pdf_data = pdf.read()
+
+        st.download_button(
+            label=" Download PDF Recommendation Report",
+            data=pdf_data,
+            file_name="job_recommendation_report.pdf",
+            mime="application/pdf"
+        )
+
+        st.subheader(
+            " Top Job Recommendations"
+        )
+
+        if not recommendations:
+
+            st.warning(
+                "No jobs match your selected filters. "
+                "Try lowering the minimum match percentage "
+                "or changing the search criteria."
+            )
+
+
+        else:
+
+            for i, job in enumerate(
+                recommendations,
+                start=1
+            ):
+
+                st.markdown(
+                    f"### {i}. {job['job_title']}"
+                )
+
+                # --------------------------------------------------
+                # Overall Match Score
+                # --------------------------------------------------
+
+                st.markdown(
+                    "### Overall Match"
+                )
+
+                st.metric(
+                    "Match Score",
+                    f"{job['final_score']:.2f}%"
+                )
+
+                st.progress(
+                    min(
+                        job["final_score"] / 100,
+                        1.0
+                    )
+                )
+
+                # --------------------------------------------------
+                # Semantic Similarity and Skill Match
+                # --------------------------------------------------
+
+                col1, col2 = st.columns(2)
+
+                # Semantic Similarity
+
+                with col1:
+
+                    st.markdown(
+                        "### Semantic Similarity"
+                    )
+
+                    st.metric(
+                        "Score",
+                        f"{job['semantic_score']:.2f}%"
+                    )
+
+                    st.progress(
+                        min(
+                            job["semantic_score"] / 100,
+                            1.0
+                        )
+                    )
+
+                # Skill Match
+
+                with col2:
+
+                    st.markdown(
+                        "### Skill Match"
+                    )
+
+                    st.metric(
+                        "Score",
+                        f"{job['skill_score']:.2f}%"
+                    )
+
+                    st.progress(
+                        min(
+                            job["skill_score"] / 100,
+                            1.0
+                        )
+                    )
+
+                # --------------------------------------------------
+                # Match Interpretation
+                # --------------------------------------------------
+
+                score = job["final_score"]
+
+                if score >= 80:
+                    st.success("Strong Match")
+
+                elif score >= 60:
+                    st.info("Good Match")
+
+                elif score >= 40:
+                    st.warning("Moderate Match")
+
+                else:
+                    st.error("Low Match")
+
+
+                # --------------------------------------------------
+                # Matching Skills
+                # --------------------------------------------------
+
+                st.write(
+                    "** Matching Skills**"
+                )
+
 
                 if job["matched_skills"]:
 
@@ -143,7 +756,14 @@ if uploaded_file:
                     st.write("None")
 
 
-                st.write("**❌ Missing Skills**")
+                # --------------------------------------------------
+                # Missing Skills
+                # --------------------------------------------------
+
+                st.write(
+                    "** Missing Skills**"
+                )
+
 
                 if job["missing_skills"]:
 
@@ -157,4 +777,96 @@ if uploaded_file:
 
                     st.write("None")
 
-            st.divider()
+
+                # --------------------------------------------------
+                # Skill Gap Analysis
+                # --------------------------------------------------
+
+                st.markdown(
+                    '<div class="section-title">Skill Gap Analysis</div>',
+                    unsafe_allow_html=True
+                )
+
+
+                matched_skills = job[
+                    "matched_skills"
+                ]
+
+                missing_skills = job[
+                    "missing_skills"
+                ]
+
+
+                total_skills = (
+                    len(matched_skills)
+                    +
+                    len(missing_skills)
+                )
+
+
+                if total_skills > 0:
+
+                    skill_coverage = (
+                        len(matched_skills)
+                        /
+                        total_skills
+                    ) * 100
+
+                else:
+
+                    skill_coverage = 0
+
+
+                st.write(
+                    f"**Skill Coverage: "
+                    f"{skill_coverage:.2f}%**"
+                )
+
+
+                st.progress(
+                    min(
+                        skill_coverage / 100,
+                        1.0
+                    )
+                )
+
+                # --------------------------------------------------
+                # Skills User Has
+                # --------------------------------------------------
+
+                if matched_skills:
+
+                    st.markdown(
+                        '<div class="section-title">Skills You Have</div>',
+                        unsafe_allow_html=True
+                    )
+
+                    for skill in matched_skills:
+                        st.write(
+                            skill
+                        )
+
+                # --------------------------------------------------
+                # Skills User Should Learn
+                # --------------------------------------------------
+
+                if missing_skills:
+
+                    st.markdown(
+                        '<div class="section-title">Skills You Should Learn</div>',
+                        unsafe_allow_html=True
+                    )
+
+                    for skill in missing_skills:
+                        st.write(
+                            skill
+                        )
+
+                else:
+
+                    st.success(
+                        "You have all the required "
+                        "skills for this job!"
+                    )
+
+                st.divider()
