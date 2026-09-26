@@ -3,3 +3,6 @@ venv/
 __pycache__/
 *.pyc
 .idea/
+job_recommendation_report.pdf
+jobs_backup_10000.csv
+jobs_before_column_fix.csv
