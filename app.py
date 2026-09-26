@@ -124,37 +124,6 @@ uploaded_file = st.file_uploader(
     help="Upload a PDF resume for analysis."
 )
 
-# --------------------------------------------------
-# Job Search & Filters
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-title">Job Search & Filters</div>',
-    unsafe_allow_html=True
-)
-
-filter_col1, filter_col2, filter_col3 = st.columns([2, 2, 1])
-
-with filter_col1:
-    job_title_filter = st.text_input(
-        "Job Title",
-        placeholder="Search by job title"
-    )
-
-with filter_col2:
-    skill_filter = st.text_input(
-        "Required Skill",
-        placeholder="Search by skill"
-    )
-
-with filter_col3:
-    min_match_score = st.slider(
-        "Minimum Match",
-        min_value=0,
-        max_value=100,
-        value=0,
-        step=5
-    )
 
 
 # --------------------------------------------------
@@ -324,54 +293,6 @@ if uploaded_file:
                 jobs,
                 top_n=len(jobs)
             )
-
-            # --------------------------------------------------
-            # Apply Job Filters
-            # --------------------------------------------------
-
-        filtered_recommendations = []
-
-        for job in recommendations:
-
-            # ----------------------------------------------
-            # Job Title Filter
-            # ----------------------------------------------
-
-            if job_title_filter:
-
-                if job_title_filter.lower() not in job["job_title"].lower():
-                    continue
-
-            # ----------------------------------------------
-            # Skill Filter
-            # ----------------------------------------------
-
-            if skill_filter:
-
-                skill_found = False
-
-                for skill in (
-                        job["matched_skills"]
-                        + job["missing_skills"]
-                ):
-
-                    if skill_filter.lower() in skill.lower():
-                        skill_found = True
-                        break
-
-                if not skill_found:
-                    continue
-
-            # ----------------------------------------------
-            # Minimum Match Score
-            # ----------------------------------------------
-
-            if job["final_score"] < min_match_score:
-                continue
-
-            filtered_recommendations.append(job)
-
-        recommendations = filtered_recommendations
 
 
         # --------------------------------------------------
